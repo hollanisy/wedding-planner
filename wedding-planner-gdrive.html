@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wedding Planner — Google Drive Sync</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap');
+
+:root{
+  --ivory:#FBF6F1;
+  --paper:#FFFDFB;
+  --rose-light:#F3DEDE;
+  --rose:#E3BAC0;
+  --rose-deep:#B87D89;
+  --mauve:#5C3D42;
+  --mauve-soft:#8A6167;
+  --gold:#C6A15B;
+  --gold-light:#EFE1C4;
+  --sage:#93A57F;
+  --sage-light:#DEE6D2;
+  --line:#EAD9D4;
+  --shadow: 0 8px 24px -12px rgba(92,61,66,0.18);
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--ivory);color:var(--mauve);font-family:'Jost',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.display{font-family:'Cormorant Garamond',serif;font-weight:600;color:var(--mauve);}
+::selection{background:var(--rose);color:var(--mauve);}
+
+/* ---------- HERO ---------- */
+.hero{
+  position:relative;
+  background:linear-gradient(180deg,var(--rose-light) 0%, var(--ivory) 100%);
+  padding:52px 24px 40px;
+  text-align:center;
+  overflow:hidden;
+  border-bottom:1px solid var(--line);
+}
+.hero svg.branch{position:absolute; opacity:0.55;}
+.hero svg.branch.left{left:-10px; top:-10px; width:160px; transform:scaleX(-1) rotate(8deg);}
+.hero svg.branch.right{right:-10px; bottom:-10px; width:160px; transform:rotate(6deg);}
+.monogram{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--paper); border:1.5px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px; font-family:'Cormorant Garamond',serif;
+  font-size:22px; color:var(--gold); letter-spacing:2px;
+  box-shadow:var(--shadow);
+}
+.hero h1{font-size:clamp(28px,5vw,44px); margin:0 0 6px; letter-spacing:0.5px;}
+.hero .names{
+  display:flex; gap:10px; justify-content:center; align-items:baseline; flex-wrap:wrap;
+}
+.hero input.name-edit{
+  font-family:'Cormorant Garamond',serif; font-size:clamp(24px,5vw,40px); font-weight:600;
+  text-align:center; background:transparent; border:none; border-bottom:1px dashed transparent;
+  color:var(--mauve); width:auto; min-width:60px; max-width:260px; padding:2px 4px;
+}
+.hero input.name-edit:hover, .hero input.name-edit:focus{border-bottom:1px dashed var(--rose-deep); outline:none;}
+.hero .amp{font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); font-size:clamp(20px,4vw,30px);}
+.hero .sub{margin-top:10px; font-size:13px; letter-spacing:2.5px; text-transform:uppercase; color:var(--rose-deep);}
+.hero input.date-edit{
+  margin-top:12px; font-family:'Jost',sans-serif; font-size:14px; color:var(--mauve-soft);
+  background:var(--paper); border:1px solid var(--line); border-radius:20px; padding:6px 16px;
+  text-align:center;
+}
+.hero .countdown{margin-top:10px;font-size:13px;color:var(--gold); letter-spacing:1px;}
+
+/* ---------- NAV ---------- */
+.tabs{
+  position:sticky; top:0; z-index:20; background:var(--ivory)/*fallback*/;
+  background:rgba(251,246,241,0.92); backdrop-filter:blur(6px);
+  display:flex; gap:8px; overflow-x:auto; padding:14px 16px; border-bottom:1px solid var(--line);
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{
+  flex:0 0 auto; padding:9px 18px; border-radius:999px; border:1px solid var(--line);
+  background:var(--paper); color:var(--mauve-soft); font-family:'Jost',sans-serif; font-size:13.5px;
+  letter-spacing:0.4px; cursor:pointer; transition:all .2s ease; white-space:nowrap;
+}
+.tab-btn:hover{border-color:var(--rose-deep); color:var(--mauve);}
+.tab-btn.active{background:var(--mauve); color:var(--ivory); border-color:var(--mauve);}
+.tab-btn.refresh-btn{margin-left:auto; border-color:var(--gold); color:var(--gold); font-weight:500;}
+.tab-btn.refresh-btn:hover{background:var(--gold-light); border-color:var(--gold);}
+.tab-btn.refresh-btn.spinning{opacity:0.6; pointer-events:none;}
+
+.wrap{max-width:1080px; margin:0 auto; padding:28px 16px 80px;}
+
+/* ---------- DIVIDER ---------- */
+.divider{display:flex; align-items:center; gap:14px; margin:6px 0 22px;}
+.divider .line{flex:1; height:1px; background:linear-gradient(90deg, transparent, var(--rose-deep) 50%, transparent);}
+.divider svg{width:26px; height:16px; color:var(--gold);}
+
+/* ---------- CARDS ---------- */
+.card{
+  background:var(--paper); border:1px solid var(--line); border-radius:16px;
+  box-shadow:var(--shadow); padding:20px 20px 8px; margin-bottom:20px;
+}
+.card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; flex-wrap:wrap; gap:8px;}
+.card-head h3{margin:0; font-size:21px; letter-spacing:0.3px;}
+.tag{font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--gold); font-weight:500;}
+
+/* ---------- SUMMARY GRID ---------- */
+.summary-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:24px;}
+.sum-card{
+  background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:18px;
+  box-shadow:var(--shadow); position:relative; overflow:hidden;
+}
+.sum-card .label{font-size:12px; text-transform:uppercase; letter-spacing:1.5px; color:var(--rose-deep);}
+.sum-card .value{font-family:'Cormorant Garamond',serif; font-size:26px; font-weight:600; margin-top:4px; color:var(--mauve);}
+.sum-card.grand{background:linear-gradient(135deg,var(--mauve),#4a2e33); color:var(--ivory);}
+.sum-card.grand .label{color:var(--gold-light);}
+.sum-card.grand .value{color:var(--ivory);}
+.bar-track{height:6px; border-radius:4px; background:var(--rose-light); margin-top:10px; overflow:hidden;}
+.bar-fill{height:100%; background:var(--gold); border-radius:4px; transition:width .4s ease;}
+.bar-fill.over{background:#C97A6D;}
+
+.chart-card .row{display:flex; align-items:center; gap:12px; margin:10px 0;}
+.chart-card .row .rname{width:110px; font-size:13px; color:var(--mauve-soft); flex:0 0 auto;}
+.chart-card .row .track{flex:1; height:14px; background:var(--rose-light); border-radius:8px; position:relative; overflow:hidden;}
+.chart-card .row .fillb{position:absolute; top:0; left:0; height:100%; background:var(--gold-light); border-radius:8px;}
+.chart-card .row .filla{position:absolute; top:0; left:0; height:100%; background:var(--sage); border-radius:8px; opacity:0.85;}
+.legend{display:flex; gap:18px; font-size:12px; color:var(--mauve-soft); margin-top:8px;}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.legend i{width:10px;height:10px;border-radius:3px; display:inline-block;}
+
+/* ---------- TABLES ---------- */
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{
+  text-align:left; font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:1px;
+  color:var(--rose-deep); padding:8px 8px; border-bottom:1px solid var(--line);
+}
+td{padding:6px 8px; border-bottom:1px solid #F3E9E5; vertical-align:middle;}
+tr.group-row td{
+  padding-top:14px; font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:600;
+  color:var(--mauve); border-bottom:1px solid var(--rose); background:transparent;
+}
+tr:hover td{background:#FDF6F3;}
+td input[type=text], td input[type=number], td select, .catatan-input{
+  width:100%; border:1px solid transparent; background:transparent; font-family:'Jost',sans-serif;
+  font-size:13.5px; color:var(--mauve); padding:5px 6px; border-radius:6px; transition:border .15s;
+}
+td input.indent{padding-left:16px; font-style:italic; color:var(--mauve-soft);}
+td input[type=text]:hover, td input[type=number]:hover, .catatan-input:hover{border-color:var(--line);}
+td input[type=text]:focus, td input[type=number]:focus, .catatan-input:focus{border-color:var(--rose-deep); outline:none; background:#FFFCFA;}
+td select{cursor:pointer; appearance:none; -webkit-appearance:none; padding-right:22px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238A6167'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 6px center;}
+.status-pill{display:inline-block; padding:3px 10px; border-radius:999px; font-size:11.5px; letter-spacing:0.3px;}
+.status-Belum{background:#F1E3E3; color:#A9767E;}
+.status-Proses{background:var(--gold-light); color:#9A7A2E;}
+.status-Selesai{background:var(--sage-light); color:#5C7248;}
+.num-col{text-align:right; width:120px;}
+.del-btn{
+  background:none; border:none; cursor:pointer; color:var(--rose-deep); font-size:15px; opacity:0.55;
+  padding:2px 6px; border-radius:6px; transition:all .15s;
+}
+.del-btn:hover{opacity:1; background:var(--rose-light); color:var(--mauve);}
+.add-row-btn{
+  margin:12px 0 16px; background:none; border:1px dashed var(--rose-deep); color:var(--rose-deep);
+  padding:8px 16px; border-radius:10px; font-size:13px; cursor:pointer; transition:all .15s; font-family:'Jost',sans-serif;
+}
+.add-row-btn:hover{background:var(--rose-light); border-style:solid;}
+.section-actions{display:flex; justify-content:flex-end; gap:10px; margin:10px 0 4px;}
+.btn-primary{
+  background:var(--mauve); color:var(--ivory); border:none; padding:10px 20px; border-radius:10px;
+  font-size:13.5px; letter-spacing:0.4px; cursor:pointer; transition:background .15s; font-family:'Jost',sans-serif;
+}
+.btn-primary:hover{background:#472C31;}
+.btn-ghost{
+  background:none; color:var(--mauve-soft); border:1px solid var(--line); padding:10px 18px; border-radius:10px;
+  font-size:13.5px; cursor:pointer; font-family:'Jost',sans-serif;
+}
+.btn-ghost:hover{border-color:var(--rose-deep); color:var(--mauve);}
+
+/* ---------- GUEST LIST ---------- */
+.guest-cats{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;}
+.guest-form{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+.guest-form input, .guest-form select{
+  border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-family:'Jost',sans-serif; font-size:13px;
+  background:var(--paper); color:var(--mauve);
+}
+.guest-form input[name=nama]{flex:1 1 100px;}
+.guest-form input[name=alamat]{flex:1 1 90px;}
+.guest-form input[name=qty]{width:56px;}
+.guest-form select{width:74px;}
+.pihak-pria{color:#7A93A8;} .pihak-wanita{color:var(--rose-deep);}
+.guest-list-inner{max-height:260px; overflow-y:auto; margin-top:8px;}
+.guest-item{display:flex; align-items:center; gap:8px; padding:6px 2px; border-bottom:1px solid #F3E9E5; font-size:13px;}
+.guest-item .gname{flex:1; font-weight:500;}
+.guest-item .gaddr{flex:1; color:var(--mauve-soft); font-size:12px;}
+.guest-item .gqty{width:26px; text-align:center; color:var(--rose-deep); font-weight:500;}
+.cat-total{margin-top:8px; font-size:12.5px; color:var(--mauve-soft); text-align:right;}
+
+/* ---------- EXPORT BAR ---------- */
+.export-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:18px;
+  box-shadow:var(--shadow);
+}
+.export-bar-left{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.export-bar-left label{font-size:12.5px; color:var(--mauve-soft);}
+.export-bar-left select{
+  border:1px solid var(--line); border-radius:8px; padding:7px 10px; font-family:'Jost',sans-serif; font-size:13px;
+  background:var(--paper); color:var(--mauve); cursor:pointer;
+}
+.export-bar-right{display:flex; gap:10px; flex-wrap:wrap;}
+
+/* ---------- PRINT LABELS ---------- */
+.print-only{display:none;}
+#printLabels{
+  display:none; grid-template-columns:repeat(2, 1fr); gap:6mm; padding:8mm;
+}
+.pl-label{
+  border:1px dashed var(--rose-deep); border-radius:10px; padding:10mm 8mm; text-align:center;
+  font-family:'Jost',sans-serif; break-inside:avoid; position:relative; min-height:28mm;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+}
+.pl-orn{font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--gold); font-size:16px; margin-bottom:4px;}
+.pl-to{font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--rose-deep);}
+.pl-name{font-family:'Cormorant Garamond',serif; font-weight:600; font-size:19px; color:var(--mauve); margin-top:3px;}
+.pl-addr{font-size:11px; color:var(--mauve-soft); margin-top:3px;}
+.pl-qty{font-size:10px; color:var(--gold); margin-top:3px;}
+
+@media print{
+  body.printing > *:not(.print-only){ display:none !important; }
+  body.printing .print-only{ display:block !important; }
+  body.printing #printLabels{ display:grid !important; }
+  @page{ margin:10mm; }
+}
+
+/* filter pills */
+.filter-row{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+.filter-pill{padding:6px 14px; border-radius:999px; border:1px solid var(--line); background:var(--paper);
+  font-size:12.5px; cursor:pointer; color:var(--mauve-soft);}
+.filter-pill.active{background:var(--rose); border-color:var(--rose); color:var(--mauve);}
+
+/* ---------- SONGS ---------- */
+.song-table td:first-child{color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:600; width:36px;}
+
+/* ---------- EMPTY ---------- */
+.empty{text-align:center; padding:30px 10px; color:var(--mauve-soft); font-size:14px;}
+.empty svg{width:36px; opacity:0.5; margin-bottom:8px;}
+
+footer{text-align:center; padding:24px; font-size:11.5px; color:var(--rose-deep); letter-spacing:1px;}
+
+/* ---------- LOGIN ---------- */
+.login-overlay{
+  position:fixed; inset:0; background:rgba(92,61,66,0.55); backdrop-filter:blur(4px);
+  display:flex; align-items:center; justify-content:center; z-index:300; padding:20px;
+}
+.login-overlay.hidden{display:none;}
+.login-card{
+  background:var(--paper); border-radius:20px; padding:34px 28px; max-width:360px; width:100%;
+  text-align:center; box-shadow:0 20px 50px -15px rgba(92,61,66,0.4);
+}
+.login-card h2{margin:0 0 6px;}
+.login-card p{font-size:12.5px; color:var(--mauve-soft); margin:0 0 18px; line-height:1.5;}
+.login-card input[type=text]{
+  width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+  font-family:'Jost',sans-serif; font-size:13.5px; margin-bottom:14px; box-sizing:border-box; text-align:center;
+}
+.role-btns{display:flex; flex-direction:column; gap:10px; margin-bottom:14px;}
+.role-btn{
+  padding:14px; border-radius:12px; border:1.5px solid var(--line); background:var(--ivory);
+  cursor:pointer; font-family:'Jost',sans-serif; font-size:14.5px; color:var(--mauve); transition:all .15s;
+}
+.role-btn:hover{border-color:var(--rose-deep); background:var(--rose-light);}
+
+.role-badge{
+  display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--mauve-soft);
+  margin-top:10px; background:var(--paper); border:1px solid var(--line); padding:5px 14px; border-radius:999px;
+}
+.role-badge b{color:var(--mauve);}
+.role-badge .switch-role{color:var(--gold); text-decoration:underline; cursor:pointer; margin-left:2px;}
+
+/* ---------- BACKUP PANEL ---------- */
+.backup-panel{
+  position:fixed; bottom:76px; right:16px; background:var(--paper); border:1px solid var(--line);
+  border-radius:14px; box-shadow:var(--shadow); padding:18px; width:270px; z-index:150; display:none;
+}
+.backup-panel.open{display:block;}
+.backup-panel h4{margin:0 0 8px; font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--mauve);}
+.backup-panel p{font-size:11.5px; color:var(--mauve-soft); margin:0 0 12px; line-height:1.5;}
+.backup-panel input[type=file]{font-size:11px; width:100%; margin-top:6px;}
+.backup-fab{
+  position:fixed; bottom:16px; right:16px; z-index:150; background:var(--mauve); color:var(--ivory);
+  border:none; border-radius:999px; padding:12px 18px; font-size:13px; cursor:pointer; box-shadow:var(--shadow);
+  font-family:'Jost',sans-serif;
+}
+.backup-fab:hover{background:#472C31;}
+
+.toast{
+  position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--mauve); color:var(--ivory); padding:10px 20px; border-radius:10px; font-size:13px;
+  opacity:0; transition:all .3s ease; pointer-events:none; z-index:100; letter-spacing:0.3px;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+@media(max-width:640px){
+  .num-col{width:86px;}
+  th,td{padding:6px 4px; font-size:12.5px;}
+  .guest-form input[name=alamat]{display:none;}
+}
+
+</style>
+</head>
+<body>
+
+<div class="login-overlay" id="setupOverlay" style="display:none;">
+  <div class="login-card" style="max-width:460px; text-align:left;">
+    <h2 style="text-align:center;">⚙️ Perlu Setup Dulu</h2>
+    <p style="text-align:center;">Google Sign-In &amp; sinkronisasi Drive belum dikonfigurasi. Isi <code>GOOGLE_CLIENT_ID</code> dan <code>DRIVE_FILE_ID</code> di bagian atas kode (cari <code>=== KONFIGURASI ===</code>), lalu buka ulang file ini.</p>
+    <ol style="font-size:12.5px; color:var(--mauve-soft); line-height:1.7; padding-left:18px;">
+      <li>Unduh &amp; hosting file ini di domain sungguhan (GitHub Pages / Netlify / Firebase Hosting) — <b>tidak akan berfungsi di preview Claude</b>.</li>
+      <li>Buat project di <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> → OAuth consent screen (mode Testing, tambahkan email kalian sebagai Test User) → Credentials → OAuth Client ID (Web application) → tambahkan domain hosting kamu di Authorized JavaScript origins.</li>
+      <li>Salin Client ID ke <code>GOOGLE_CLIENT_ID</code>.</li>
+      <li>Buat 1 file kosong bernama <code>wedding-data.json</code> berisi <code>{}</code>, upload ke Google Drive, klik kanan → Share → beri akses Editor ke semua email yang boleh akses. Salin File ID dari URL-nya ke <code>DRIVE_FILE_ID</code>.</li>
+    </ol>
+  </div>
+</div>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="monogram" style="margin:0 auto 14px;">&amp;</div>
+    <h2>Selamat Datang</h2>
+    <p>Masuk dengan akun Google kamu untuk mengakses &amp; menyinkronkan data pernikahan bersama.</p>
+    <div id="gsiButtonWrap" style="display:flex; justify-content:center; margin-bottom:14px;"></div>
+    <button class="role-btn" id="manualSignInBtn" style="display:none;">Masuk dengan Google</button>
+    <p id="roleChooserPrompt" style="display:none; font-size:12.5px; margin-top:16px;">Kamu dari pihak mana?</p>
+    <div class="role-btns" id="roleChooser" style="display:none;">
+      <button class="role-btn" data-role="pria">🤵 Mempelai Pria</button>
+      <button class="role-btn" data-role="wanita">👰 Mempelai Wanita</button>
+    </div>
+    <p style="font-size:11px;">Data disimpan di satu file Google Drive yang sudah kalian bagikan bersama.</p>
+  </div>
+</div>
+
+<div class="backup-panel" id="backupPanel">
+  <h4>Cadangan Data</h4>
+  <p>Unduh seluruh data (anggaran, tamu, lagu) sebagai file .json — cadangan tambahan di luar Google Drive.</p>
+  <button class="btn-primary" id="downloadBackupBtn" style="width:100%;margin-bottom:10px;">⬇ Unduh Cadangan (.json)</button>
+  <label style="font-size:11.5px;color:var(--mauve-soft);">Pulihkan dari file cadangan:</label>
+  <input type="file" id="restoreFileInput" accept="application/json">
+</div>
+
+<div class="hero">
+  <svg class="branch left" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5 Q40 20 45 55 Q48 80 30 100" stroke="#B87D89" stroke-width="1.4"/><ellipse cx="30" cy="30" rx="9" ry="4" fill="#E3BAC0" transform="rotate(35 30 30)"/><ellipse cx="42" cy="52" rx="8" ry="4" fill="#DEE6D2" transform="rotate(70 42 52)"/><ellipse cx="35" cy="80" rx="8" ry="4" fill="#E3BAC0" transform="rotate(20 35 80)"/><ellipse cx="20" cy="60" rx="7" ry="3.5" fill="#EFE1C4" transform="rotate(100 20 60)"/></svg>
+  <svg class="branch right" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 5 Q40 20 45 55 Q48 80 30 100" stroke="#B87D89" stroke-width="1.4"/><ellipse cx="30" cy="30" rx="9" ry="4" fill="#E3BAC0" transform="rotate(35 30 30)"/><ellipse cx="42" cy="52" rx="8" ry="4" fill="#DEE6D2" transform="rotate(70 42 52)"/><ellipse cx="35" cy="80" rx="8" ry="4" fill="#E3BAC0" transform="rotate(20 35 80)"/><ellipse cx="20" cy="60" rx="7" ry="3.5" fill="#EFE1C4" transform="rotate(100 20 60)"/></svg>
+  <div class="monogram" id="monogram">&amp;</div>
+  <div class="sub">Wedding Budget &amp; Planner</div>
+  <div class="names">
+    <input class="name-edit" id="groomName" type="text" value="Mempelai Pria" />
+    <span class="amp">&amp;</span>
+    <input class="name-edit" id="brideName" type="text" value="Mempelai Wanita" />
+  </div>
+  <div><input class="date-edit" id="weddingDate" type="date" /></div>
+  <div class="countdown" id="countdown"></div>
+  <div id="roleBadgeWrap"></div>
+</div>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="wrap" id="content"></div>
+
+<footer>dibuat dengan cinta — data disinkronkan ke Google Drive bersama</footer>
+<button class="backup-fab" id="backupFab">💾 Cadangan</button>
+<div class="toast" id="toast"></div>
+<div class="print-only" id="printLabels"></div>
+
+<script>
+/* ================= DATA MODEL ================= */
+const EVENT_ORDER = ['lamaran','akad','walimah','resepsi','tambahan'];
+const EVENT_LABEL = {lamaran:'Lamaran', akad:'Akad Nikah', walimah:'Walimatul Ursy', resepsi:'Resepsi', tambahan:'Tambahan & Cadangan'};
+
+function uid(){ return 'i' + Math.random().toString(36).slice(2,10); }
+function mk(name, indent){ return {id:uid(), name:name, indent:!!indent, status:'Belum', budget:0, actual:0, notes:''}; }
+function grp(name, names){
+  return {id:uid(), name:name, items:names.map(n=> Array.isArray(n) ? mk(n[0], true) : mk(n)) };
+}
+
+function defaultMeta(){
+  return { couple:{groom:'Mempelai Pria', bride:'Mempelai Wanita', date:''}, reserve:{percent:7.5} };
+}
+function defaultEventGroups(evKey){
+  const all = {
+    lamaran:[
+      grp('LAMARAN', ['Mahar','Sewa Jasa Hias Seserahan + Mahar','Isi Seserahan','Seserahan Balasan untuk CPP','Cincin Nikah','Kotak Cincin Nikah']),
+      grp('KONSUMSI', ['Konsumsi Lamaran (100 pax keluarga)','Transport','Makanan Cemilan','Seserahan Lamaran untuk CPW','Bingkisan untuk CPP']),
+      grp('DOKUMENTASI', ['Pemilihan Dokumentasi']),
+      grp('ENTERTAINMENT', ['Music Band','Penyerah CPP','Sari Tilawah']),
+    ],
+    akad:[
+      grp('PRA NIKAH - ADMINISTRASI', ['Dokumen Pernikahan',['FC KTP CPP & CPW'],['FC KTP Ortu CPP & CPW'],['FC KK CPP & CPW'],['FC Akte CPP & CPW'],['FC Ijazah CPP & CPW'],['Surat Ket. Sehat Puskesmas'],['Vaksin Tetanus CPW'],['Cek Lab CPP'],['Cek Lab CPW'],['Pas Foto'],['Surat Ket. Belum Nikah dari Setempat'],['Surat Pengantar Nikah'],'Pendaftaran ke KUA','Mahar (utk pengajuan KUA)','Sambutan Penyerah CPP','Sambutan Penerima CPW','Saksi Nikah CPP','Saksi Nikah CPW']),
+      grp('KONSUMSI', ['Konsumsi Akad (50 pax keluarga)','Transport','Makanan Cemilan','Cincin Lamaran','Baju Lamaran','Seserahan Lamaran untuk CPW','Bingkisan untuk CPP']),
+      grp('ADDITIONAL - AKAD', ['Penghulu Confirm','Saksi Confirm','MC / Ustadz','Mahar + Cincin','Teks Akad','Teks Sambutan','Teks Doa']),
+      grp('ADDITIONAL - DECOR', ['Pemilihan Vendor Decor + DP','Referensi Dekor + Color Palette','Fiksasi Layout',['Entrance'],['Meja + Kursi + Backdrop + Kursi Audience Akad'],'CPW',['MUA + Hijab Do + Siger + Softlens + Nail Art'],'CPP',['Baju Akad + Aksesoris'],'Sound']),
+      grp('DOKUMENTASI', ['Pemilihan Dokumentasi']),
+      grp('ENTERTAINMENT', ['Music Band']),
+    ],
+    walimah:[
+      grp('KONSUMSI', ['Konsumsi','Nasi Box','Jajanan Box']),
+      grp('ADDITIONAL - WALIMAH', ['Ustadz Confirm','MC']),
+      grp('DOKUMENTASI', ['Pemilihan Dokumentasi']),
+      grp('ENTERTAINMENT', ['Sound']),
+    ],
+    resepsi:[
+      grp('UNDANGAN', ['Undangan Pengantin','Undangan Orangtua','Label Nama']),
+      grp('SOUVENIR', ['Souvenir','Kue','Tas Spunbond']),
+      grp('ADDITIONAL', ['Sample Undangan',['Sample Souvenir'],'Perawatan Pranikah','Prewedding',['DP Photographer'],['Pelunasan'],['Baju PW CPW'],['Baju PW CPP'],['Sepatu PW CPW'],['Sepatu PW CPP'],'Buku Tamu Digital & Barcode Undangan','Cetak Foto Pre-Wedding','Fee Penghulu','Fee Penyerah CPP','Sari Tilawah']),
+      grp('SERAGAMAN', ['Keluarga',['Kain'],['Kerudung'],'Brides & Grooms',['Item Seragam'],'Packaging Brides & Grooms']),
+      grp('D DAY - WEDDING ORGANIZER', ['DP WO',['Angsuran 1'],['Pelunasan WO'],'Pembagian Jobdesc Tim WO','Penyerahan List Tamu & Briefing',['Fiksasi Konsep Acara, Rundown, Meeting WO'],['Fiksasi Dekor dgn Venue Team'],'Technical Meeting']),
+      grp('D DAY - DECOR', ['Pemilihan Vendor Decor + DP','Referensi Dekor + Color Palette','Fiksasi Layout',['Entrance'],['Meja + Kursi + Backdrop + Kursi Audience Akad'],['Layouting Bunga Meja & Kursi All Venue'],['Regist & Souvenir Spot'],'Pelunasan Decor']),
+      grp('D DAY - CATERING', ['Menghitung Jumlah Tamu + Keluarga','Menu Buffet','Menu Stall','Test Food']),
+      grp('D DAY - MAKEUP & ATTIRE', ['Fitting Pertama','Fitting Kedua','CPW',['MUA + Hijab Do + Siger + Softlens + Nail Art'],['Baju Akad + Siger'],['Baju Resepsi'],'CPP',['Baju Akad + Aksesoris'],['Baju Resepsi'],'Orangtua',['2 Beskap Orangtua (Ayah)'],['2 Baju Orangtua (Ibu)'],['MUA + Hijab Do Orangtua'],'Busana Pager Ayu','Busana Pager Bagus','Makeup Pager Ayu','Hand Bouquet']),
+      grp('D DAY - DOKUMENTASI', ['Pemilihan Dokumentasi','Penyerahan Referensi Dokumentasi','Pelunasan Dokumentasi']),
+      grp('D DAY - ENTERTAINMENT', ['Music Band','Playlist Wedding','Games','Hadiah Games','Speech Teman']),
+    ],
+    tambahan:[
+      grp('BIAYA TAMBAHAN & LOGISTIK', [
+        'Kebersihan & Keamanan (tim kebersihan + pengatur parkir, di luar sewa gedung)',
+        'Charge Listrik Tambahan (jika daya gedung kurang untuk dekor/musik)',
+        'Transportasi & Akomodasi Vendor (jika lokasi acara jauh)',
+        'Konsumsi Kru (MUA, Fotografer, WO, Band selama hari-H)',
+      ]),
+      grp('ADMINISTRASI & LEGAL', [
+        'Pemeriksaan Kesehatan Pra-Nikah (Pre-marital Checkup)',
+        'Biaya Kursus Calon Pengantin (Suscatin)',
+        'Biaya Resmi Penghulu / PNBP (jika menikah di luar KUA/jam kerja)',
+      ]),
+      grp('PENAMPILAN & KENYAMANAN', [
+        'Perawatan Pra-Nikah (Spa, Facial, dll)',
+        'Perlengkapan Darurat (P3K, jarum pentul, peniti, sandal cadangan)',
+        'Kotak Angpao (termasuk kunci/gembok)',
+      ]),
+    ],
+  };
+  return all[evKey];
+}
+
+const GUEST_CATS = [
+  {key:'teman', label:'Teman'},
+  {key:'kantor', label:'Kantor'},
+  {key:'vip', label:'VIP'},
+  {key:'keluarga', label:'Keluarga'},
+  {key:'tetangga', label:'Tetangga'},
+];
+
+/* =========================================================================
+   === KONFIGURASI ===  (WAJIB DIISI SEBELUM DIPAKAI — lihat README di chat)
+   ========================================================================= */
+const GOOGLE_CLIENT_ID = 'GANTI_DENGAN_CLIENT_ID_ANDA.apps.googleusercontent.com';
+const DRIVE_FILE_ID = 'GANTI_DENGAN_FILE_ID_DRIVE_ANDA';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
+/* ========================================================================= */
+
+const isConfigured = !GOOGLE_CLIENT_ID.startsWith('GANTI_') && !DRIVE_FILE_ID.startsWith('GANTI_');
+
+/* ---------- storage "keys" — all stored as sub-fields inside ONE Drive JSON file ---------- */
+const SK = {
+  meta: 'wd-meta-v2',
+  event: (k)=> 'wd-events-'+k+'-v2',
+  guest: (k)=> 'wd-guests-'+k+'-v2',
+  songs: 'wd-songs-v2',
+  members: 'wd-members-v1',
+};
+
+let state = { couple:null, reserve:null, events:{}, guests:{}, songs:[] };
+let activeTab = 'ringkasan';
+let guestFilter = 'semua';
+let exportCatFilter = 'semua';
+let saveTimer = {};
+let myRole = null; // {role:'pria'|'wanita', name, email, picture}
+let accessToken = null;
+let tokenClient = null;
+
+/* ---------- Google Drive read/write (single JSON file, keyed sub-fields) ---------- */
+async function driveReadAll(){
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${DRIVE_FILE_ID}?alt=media`, {
+    headers:{ Authorization:'Bearer ' + accessToken }
+  });
+  if(res.status === 401){ accessToken = null; throw new Error('unauthorized'); }
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
+}
+async function driveWriteAll(obj){
+  const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${DRIVE_FILE_ID}?uploadType=media`, {
+    method:'PATCH',
+    headers:{ Authorization:'Bearer ' + accessToken, 'Content-Type':'application/json' },
+    body: JSON.stringify(obj)
+  });
+  if(res.status === 401){ accessToken = null; throw new Error('unauthorized'); }
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+}
+
+async function fetchLatest(key, fallback){
+  try{
+    const all = await driveReadAll();
+    return (key in all) ? all[key] : fallback;
+  }catch(e){
+    if(e.message === 'unauthorized') showToast('Sesi Google berakhir — silakan masuk lagi');
+    return fallback;
+  }
+}
+async function saveKey(key, value, quiet){
+  try{
+    const all = await driveReadAll(); // re-read first so we don't clobber other people's other fields
+    all[key] = value;
+    await driveWriteAll(all);
+    if(!quiet) showToast('Tersimpan ke Google Drive');
+  }catch(e){
+    showToast(e.message==='unauthorized' ? 'Sesi Google berakhir — silakan masuk lagi' : 'Gagal menyimpan ke Drive — periksa koneksi');
+  }
+}
+function debouncedSave(key, value, id){
+  clearTimeout(saveTimer[id]);
+  saveTimer[id] = setTimeout(()=> saveKey(key, value), 500);
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=> t.classList.remove('show'), 1300);
+}
+function escAttrSafe(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+/* ================= LOGIN — real Google Sign-In ================= */
+function initGoogleAuth(){
+  if(typeof google === 'undefined' || !google.accounts){
+    showToast('Google Sign-In gagal dimuat (kemungkinan diblokir sandbox/CSP)');
+    return;
+  }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE + ' https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    callback: onGoogleAuthSuccess,
+    error_callback: (err)=>{ console.error(err); showToast('Login Google gagal atau dibatalkan'); }
+  });
+  const btn = document.getElementById('manualSignInBtn');
+  btn.style.display = 'block';
+  btn.onclick = ()=> tokenClient.requestAccessToken();
+}
+
+async function onGoogleAuthSuccess(resp){
+  if(resp.error){ showToast('Login gagal: ' + resp.error); return; }
+  accessToken = resp.access_token;
+  let userinfo;
+  try{
+    userinfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers:{ Authorization:'Bearer ' + accessToken }
+    }).then(r=>r.json());
+  }catch(e){ showToast('Gagal mengambil profil Google'); return; }
+
+  const members = await fetchLatest(SK.members, {});
+  const existing = members[userinfo.email];
+
+  if(existing){
+    myRole = { role: existing.role, name: userinfo.name, email: userinfo.email, picture: userinfo.picture };
+    document.getElementById('loginOverlay').classList.add('hidden');
+    renderRoleBadge();
+    loadAll();
+  } else {
+    // first time this Google account signs in — ask which side they're on, then remember it
+    document.getElementById('gsiButtonWrap').style.display = 'none';
+    document.getElementById('manualSignInBtn').style.display = 'none';
+    document.getElementById('roleChooserPrompt').style.display = 'block';
+    document.getElementById('roleChooser').style.display = 'flex';
+    document.querySelectorAll('#roleChooser .role-btn').forEach(btn=>{
+      btn.onclick = async ()=>{
+        myRole = { role: btn.dataset.role, name: userinfo.name, email: userinfo.email, picture: userinfo.picture };
+        members[userinfo.email] = { role: btn.dataset.role, name: userinfo.name };
+        await saveKey(SK.members, members, true);
+        document.getElementById('loginOverlay').classList.add('hidden');
+        renderRoleBadge();
+        loadAll();
+      };
+    });
+  }
+}
+
+function renderRoleBadge(){
+  const wrap = document.getElementById('roleBadgeWrap');
+  if(!myRole){ wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="role-badge">${myRole.picture ? `<img src="${myRole.picture}" style="width:18px;height:18px;border-radius:50%;">` : ''} Masuk sebagai <b>${escAttrSafe(myRole.name)}</b> (${myRole.role==='pria'?'Pihak Pria':'Pihak Wanita'})<span class="switch-role" id="switchRoleBtn">Keluar</span></div>`;
+  document.getElementById('switchRoleBtn').onclick = ()=>{
+    accessToken = null; myRole = null;
+    document.getElementById('roleBadgeWrap').innerHTML = '';
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('gsiButtonWrap').style.display = 'flex';
+    document.getElementById('manualSignInBtn').style.display = 'block';
+    document.getElementById('roleChooserPrompt').style.display = 'none';
+    document.getElementById('roleChooser').style.display = 'none';
+  };
+}
+
+function initLogin(){
+  if(!isConfigured){
+    document.getElementById('setupOverlay').style.display = 'flex';
+    return;
+  }
+  document.getElementById('loginOverlay').classList.remove('hidden');
+  try{ initGoogleAuth(); }
+  catch(e){ showToast('Google Identity Services gagal diinisialisasi'); }
+}
+
+/* ================= INITIAL LOAD ================= */
+async function loadAll(){
+  const meta = await fetchLatest(SK.meta, null);
+  if(meta){ state.couple = meta.couple; state.reserve = meta.reserve || {percent:7.5}; }
+  else { const d = defaultMeta(); state.couple = d.couple; state.reserve = d.reserve; await saveKey(SK.meta, d, true); }
+
+  for(const k of EVENT_ORDER){
+    const data = await fetchLatest(SK.event(k), null);
+    if(data){ state.events[k] = data; }
+    else { const d = defaultEventGroups(k); state.events[k] = d; await saveKey(SK.event(k), d, true); }
+  }
+
+  for(const gc of GUEST_CATS){
+    const data = await fetchLatest(SK.guest(gc.key), null);
+    state.guests[gc.key] = data || [];
+  }
+
+  const songs = await fetchLatest(SK.songs, null);
+  state.songs = songs || [];
+
+  hydrateHeader();
+  renderTabs();
+  renderContent();
+}
+
+/* refresh just one section from storage (used when switching tabs, so partner's edits show up) */
+async function refreshSection(section, key){
+  if(section==='meta'){
+    const meta = await fetchLatest(SK.meta, {couple:state.couple, reserve:state.reserve});
+    state.couple = meta.couple; state.reserve = meta.reserve || {percent:7.5};
+  } else if(section==='event'){
+    state.events[key] = await fetchLatest(SK.event(key), state.events[key]);
+  } else if(section==='guests'){
+    for(const gc of GUEST_CATS){ state.guests[gc.key] = await fetchLatest(SK.guest(gc.key), state.guests[gc.key]); }
+  } else if(section==='songs'){
+    state.songs = await fetchLatest(SK.songs, state.songs);
+  } else if(section==='all'){
+    await refreshSection('meta');
+    for(const k of EVENT_ORDER) await refreshSection('event', k);
+    await refreshSection('guests');
+    await refreshSection('songs');
+  }
+}
+
+/* ================= HEADER ================= */
+function hydrateHeader(){
+  const g = document.getElementById('groomName');
+  const b = document.getElementById('brideName');
+  const d = document.getElementById('weddingDate');
+  g.value = state.couple.groom;
+  b.value = state.couple.bride;
+  d.value = state.couple.date || '';
+  updateMonogram();
+  updateCountdown();
+
+  const saveMeta = ()=> debouncedSave(SK.meta, {couple:state.couple, reserve:state.reserve}, 'meta');
+
+  g.oninput = ()=>{ state.couple.groom = g.value; updateMonogram(); saveMeta(); };
+  b.oninput = ()=>{ state.couple.bride = b.value; updateMonogram(); saveMeta(); };
+  d.onchange = ()=>{ state.couple.date = d.value; updateCountdown(); saveMeta(); };
+
+  [g,b].forEach(inp=>{
+    inp.addEventListener('focus', ()=> inp.select());
+    const resize = ()=>{ inp.style.width = Math.max(60, inp.value.length * 20) + 'px'; };
+    inp.addEventListener('input', resize); resize();
+  });
+}
+function updateMonogram(){
+  const g = (state.couple.groom||'?').trim()[0] || '';
+  const b = (state.couple.bride||'?').trim()[0] || '';
+  document.getElementById('monogram').textContent = (g+b).toUpperCase() || '&';
+}
+function updateCountdown(){
+  const el = document.getElementById('countdown');
+  if(!state.couple.date){ el.textContent=''; return; }
+  const target = new Date(state.couple.date);
+  const now = new Date();
+  const diff = Math.ceil((target - now)/86400000);
+  if(isNaN(diff)){ el.textContent=''; return; }
+  if(diff > 0) el.textContent = diff + ' hari menuju hari bahagia';
+  else if(diff === 0) el.textContent = 'Hari ini adalah hari bahagia! ✨';
+  else el.textContent = 'Selamat menempuh hidup baru 💕';
+}
+
+/* ================= TABS ================= */
+const TAB_DEFS = [
+  {key:'ringkasan', label:'Ringkasan'},
+  {key:'lamaran', label:'Lamaran'},
+  {key:'akad', label:'Akad Nikah'},
+  {key:'walimah', label:'Walimatul Ursy'},
+  {key:'resepsi', label:'Resepsi'},
+  {key:'tambahan', label:'Tambahan & Cadangan'},
+  {key:'tamu', label:'Tamu Undangan'},
+  {key:'lagu', label:'Daftar Lagu'},
+];
+function renderTabs(){
+  const nav = document.getElementById('tabs');
+  nav.innerHTML = '';
+  TAB_DEFS.forEach(t=>{
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (activeTab===t.key ? ' active':'');
+    btn.textContent = t.label;
+    btn.onclick = async ()=>{
+      activeTab = t.key; renderTabs();
+      await goToTab(t.key);
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+    nav.appendChild(btn);
+  });
+  const refresh = document.createElement('button');
+  refresh.className = 'tab-btn refresh-btn';
+  refresh.title = 'Ambil data terbaru (jika pasangan baru saja mengisi)';
+  refresh.innerHTML = '⟳ Sinkron';
+  refresh.onclick = async ()=>{
+    refresh.classList.add('spinning');
+    await goToTab(activeTab, true);
+    refresh.classList.remove('spinning');
+    showToast('Data terbaru dimuat');
+  };
+  nav.appendChild(refresh);
+}
+async function goToTab(key, force){
+  if(key==='ringkasan') await refreshSection('all');
+  else if(EVENT_ORDER.includes(key)) await refreshSection('event', key);
+  else if(key==='tamu') await refreshSection('guests');
+  else if(key==='lagu') await refreshSection('songs');
+  renderContent();
+}
+
+function divider(){
+  return `<div class="divider"><div class="line"></div><svg viewBox="0 0 24 16" fill="currentColor"><path d="M12 2c1 2 3 3 5 3-2 1-3 3-3 5-1-2-3-3-5-3 2-1 3-3 3-5z"/></svg><div class="line"></div></div>`;
+}
+
+function fmtRp(n){
+  n = Number(n)||0;
+  return 'Rp ' + n.toLocaleString('id-ID');
+}
+
+function eventTotals(evKey){
+  let budget=0, actual=0;
+  (state.events[evKey]||[]).forEach(g=> g.items.forEach(it=>{ budget += Number(it.budget)||0; actual += Number(it.actual)||0; }));
+  return {budget, actual};
+}
+
+/* ================= CONTENT ROUTER ================= */
+function renderContent(){
+  const c = document.getElementById('content');
+  if(activeTab==='ringkasan') return renderRingkasan(c);
+  if(EVENT_ORDER.includes(activeTab)) return renderEventTab(c, activeTab);
+  if(activeTab==='tamu') return renderTamu(c);
+  if(activeTab==='lagu') return renderLagu(c);
+}
+
+/* ---------- RINGKASAN ---------- */
+function renderRingkasan(c){
+  let grandBudget=0, grandActual=0;
+  const rows = EVENT_ORDER.map(k=>{
+    const t = eventTotals(k); grandBudget+=t.budget; grandActual+=t.actual; return {k,...t};
+  });
+  const maxVal = Math.max(1, ...rows.map(r=>Math.max(r.budget,r.actual)));
+  const sisa = grandBudget - grandActual;
+  const reservePct = (state.reserve && state.reserve.percent!=null) ? state.reserve.percent : 7.5;
+  const reserveAmount = grandBudget * (reservePct/100);
+
+  let cards = `
+    <div class="summary-grid">
+      <div class="sum-card grand">
+        <div class="label">Total Anggaran</div>
+        <div class="value">${fmtRp(grandBudget)}</div>
+      </div>
+      <div class="sum-card">
+        <div class="label">Total Realisasi</div>
+        <div class="value">${fmtRp(grandActual)}</div>
+        <div class="bar-track"><div class="bar-fill ${grandActual>grandBudget?'over':''}" style="width:${grandBudget? Math.min(100, grandActual/grandBudget*100):0}%"></div></div>
+      </div>
+      <div class="sum-card">
+        <div class="label">${sisa>=0?'Sisa Anggaran':'Melebihi Anggaran'}</div>
+        <div class="value" style="color:${sisa<0?'#C97A6D':'var(--sage)'}">${fmtRp(Math.abs(sisa))}</div>
+      </div>
+      <div class="sum-card">
+        <div class="label">Total Tamu Undangan</div>
+        <div class="value">${guestTotalCount()} orang</div>
+      </div>
+    </div>`;
+
+  let reserveCard = `<div class="card">
+    <div class="card-head"><h3>Dana Cadangan (Emergency Fund)</h3><span class="tag">disarankan 5–10%</span></div>
+    <p style="font-size:13px;color:var(--mauve-soft);margin-top:0">Sisihkan persentase dari total anggaran untuk mengantisipasi kenaikan harga vendor atau kebutuhan mendadak.</p>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <label style="font-size:13px;color:var(--mauve-soft)">Persentase cadangan:</label>
+      <input type="number" id="reservePct" min="0" max="100" step="0.5" value="${reservePct}" style="width:70px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:'Jost',sans-serif;">
+      <span style="font-size:13px;color:var(--mauve-soft)">%</span>
+      <span class="tag" style="margin-left:auto">= ${fmtRp(reserveAmount)}</span>
+    </div>
+    <div style="margin-top:12px;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;">
+      Total Anggaran + Cadangan: ${fmtRp(grandBudget + reserveAmount)}
+    </div>
+  </div>`;
+
+  let chart = `<div class="card chart-card"><div class="card-head"><h3>Anggaran vs Realisasi per Acara</h3></div>`;
+  rows.forEach(r=>{
+    const wb = Math.max(2, r.budget/maxVal*100);
+    const wa = Math.max(2, r.actual/maxVal*100);
+    chart += `<div class="row">
+      <div class="rname">${EVENT_LABEL[r.k]}</div>
+      <div class="track">
+        <div class="fillb" style="width:${wb}%"></div>
+        <div class="filla" style="width:${wa}%"></div>
+      </div>
+      <div style="width:96px;text-align:right;font-size:12px;color:var(--mauve-soft)">${fmtRp(r.actual)}</div>
+    </div>`;
+  });
+  chart += `<div class="legend"><span><i style="background:var(--gold-light)"></i>Anggaran</span><span><i style="background:var(--sage)"></i>Realisasi</span></div></div>`;
+
+  let per = `<div class="summary-grid">`;
+  rows.forEach(r=>{
+    const pct = r.budget ? Math.min(100, r.actual/r.budget*100) : 0;
+    per += `<div class="sum-card">
+      <div class="label">${EVENT_LABEL[r.k]}</div>
+      <div class="value">${fmtRp(r.actual)}</div>
+      <div style="font-size:11.5px;color:var(--mauve-soft);margin-top:2px">dari anggaran ${fmtRp(r.budget)}</div>
+      <div class="bar-track"><div class="bar-fill ${r.actual>r.budget?'over':''}" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  per += `</div>`;
+
+  c.innerHTML = `<h2 style="text-align:center;margin-bottom:4px;">Ringkasan Anggaran</h2><p style="text-align:center;color:var(--mauve-soft);font-size:13.5px;margin:0 0 18px">Pantauan bersama untuk mempelai pria &amp; wanita — tekan ⟳ Sinkron di atas untuk melihat perubahan terbaru dari pasangan</p>${divider()}${cards}${reserveCard}${chart}${per}`;
+
+  document.getElementById('reservePct').addEventListener('input', (e)=>{
+    state.reserve = {percent: Number(e.target.value)||0};
+    debouncedSave(SK.meta, {couple:state.couple, reserve:state.reserve}, 'meta');
+    renderRingkasan(c);
+  });
+}
+
+function guestTotalCount(){
+  let t=0; GUEST_CATS.forEach(gc=> (state.guests[gc.key]||[]).forEach(g=> t += Number(g.qty)||0));
+  return t;
+}
+
+/* ---------- EVENT BUDGET TABS ---------- */
+function renderEventTab(c, evKey){
+  const groups = state.events[evKey];
+  const totals = eventTotals(evKey);
+  const pct = totals.budget ? Math.min(100, totals.actual/totals.budget*100) : 0;
+
+  let html = `<h2 style="text-align:center;margin-bottom:4px;">${EVENT_LABEL[evKey]}</h2><p style="text-align:center;color:var(--mauve-soft);font-size:13px;margin:0 0 8px">Tekan ⟳ Sinkron di atas untuk memuat perubahan terbaru</p>${divider()}`;
+  html += `<div class="summary-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:22px;">
+    <div class="sum-card"><div class="label">Anggaran</div><div class="value">${fmtRp(totals.budget)}</div></div>
+    <div class="sum-card"><div class="label">Realisasi</div><div class="value">${fmtRp(totals.actual)}</div>
+      <div class="bar-track"><div class="bar-fill ${totals.actual>totals.budget?'over':''}" style="width:${pct}%"></div></div>
+    </div>
+    <div class="sum-card"><div class="label">${totals.budget-totals.actual>=0?'Sisa':'Lebih'}</div><div class="value" style="color:${totals.budget-totals.actual<0?'#C97A6D':'var(--sage)'}">${fmtRp(Math.abs(totals.budget-totals.actual))}</div></div>
+  </div>`;
+
+  groups.forEach(g=>{
+    html += `<div class="card" data-group="${g.id}">
+      <div class="card-head"><h3>${g.name}</h3><button class="del-btn" data-action="del-group" data-group="${g.id}" title="Hapus kategori">✕ kategori</button></div>
+      <table><thead><tr>
+        <th style="width:34%">Item</th><th style="width:110px">Status</th><th class="num-col">Anggaran (Rp)</th><th class="num-col">Realisasi (Rp)</th><th>Catatan</th><th style="width:34px"></th>
+      </tr></thead><tbody>`;
+      g.items.forEach(it=>{
+        html += `<tr data-item="${it.id}">
+          <td><input type="text" class="${it.indent?'indent':''}" data-field="name" value="${escAttr(it.name)}"></td>
+          <td>
+            <select data-field="status">
+              <option value="Belum" ${it.status==='Belum'?'selected':''}>Belum</option>
+              <option value="Proses" ${it.status==='Proses'?'selected':''}>Proses</option>
+              <option value="Selesai" ${it.status==='Selesai'?'selected':''}>Selesai</option>
+            </select>
+          </td>
+          <td class="num-col"><input type="number" min="0" data-field="budget" value="${it.budget||0}"></td>
+          <td class="num-col"><input type="number" min="0" data-field="actual" value="${it.actual||0}"></td>
+          <td><input type="text" class="catatan-input" data-field="notes" value="${escAttr(it.notes||'')}" placeholder="—"></td>
+          <td><button class="del-btn" data-action="del-item" title="Hapus item">✕</button></td>
+        </tr>`;
+      });
+    html += `</tbody></table>
+      <button class="add-row-btn" data-action="add-item" data-group="${g.id}">+ Tambah item</button>
+    </div>`;
+  });
+
+  html += `<div class="section-actions"><button class="btn-ghost" id="addGroupBtn">+ Tambah Kategori</button></div>`;
+  c.innerHTML = html;
+
+  function saveEvent(){ debouncedSave(SK.event(evKey), state.events[evKey], 'event-'+evKey); }
+
+  // bind events
+  c.querySelectorAll('tr[data-item] input, tr[data-item] select').forEach(el=>{
+    el.addEventListener('input', onItemFieldChange);
+    el.addEventListener('change', onItemFieldChange);
+  });
+  c.querySelectorAll('[data-action="del-item"]').forEach(btn=> btn.onclick = (e)=>{
+    const tr = e.target.closest('tr');
+    const groupEl = e.target.closest('[data-group]');
+    const groupId = groupEl.dataset.group;
+    const itemId = tr.dataset.item;
+    const g = groups.find(g=>g.id===groupId);
+    g.items = g.items.filter(it=>it.id!==itemId);
+    saveKey(SK.event(evKey), state.events[evKey]); renderEventTab(c, evKey);
+  });
+  c.querySelectorAll('[data-action="add-item"]').forEach(btn=> btn.onclick = (e)=>{
+    const g = groups.find(g=>g.id===e.target.dataset.group);
+    g.items.push(mk('Item baru'));
+    saveKey(SK.event(evKey), state.events[evKey]); renderEventTab(c, evKey);
+  });
+  c.querySelectorAll('[data-action="del-group"]').forEach(btn=> btn.onclick = (e)=>{
+    if(!confirm('Hapus kategori ini beserta seluruh isinya?')) return;
+    const gid = e.target.dataset.group;
+    state.events[evKey] = groups.filter(g=>g.id!==gid);
+    saveKey(SK.event(evKey), state.events[evKey]); renderEventTab(c, evKey);
+  });
+  document.getElementById('addGroupBtn').onclick = ()=>{
+    const name = prompt('Nama kategori baru:', 'KATEGORI BARU');
+    if(!name) return;
+    groups.push(grp(name.toUpperCase(), ['Item baru']));
+    saveKey(SK.event(evKey), state.events[evKey]); renderEventTab(c, evKey);
+  };
+
+  function onItemFieldChange(e){
+    const tr = e.target.closest('tr');
+    const groupEl = e.target.closest('[data-group]');
+    const g = groups.find(g=>g.id===groupEl.dataset.group);
+    const it = g.items.find(it=>it.id===tr.dataset.item);
+    const field = e.target.dataset.field;
+    it[field] = (field==='budget'||field==='actual') ? Number(e.target.value)||0 : e.target.value;
+    saveEvent();
+    if(field==='budget'||field==='actual'){
+      const totals2 = eventTotals(evKey);
+      const cards = c.querySelectorAll('.summary-grid .sum-card .value');
+      if(cards[0]) cards[0].textContent = fmtRp(totals2.budget);
+      if(cards[1]) cards[1].textContent = fmtRp(totals2.actual);
+      const sisa2 = totals2.budget-totals2.actual;
+      if(cards[2]) cards[2].textContent = fmtRp(Math.abs(sisa2));
+    }
+  }
+}
+
+function escAttr(s){
+  return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+/* ---------- GUEST LIST ---------- */
+function renderTamu(c){
+  let html = `<h2 style="text-align:center;margin-bottom:4px;">Daftar Tamu Undangan</h2><p style="text-align:center;color:var(--mauve-soft);font-size:13.5px">Total: <strong>${guestTotalCount()} orang</strong> — tekan ⟳ Sinkron di atas untuk melihat tamu yang baru ditambahkan pasangan</p>${divider()}`;
+
+  html += `<div class="filter-row">
+    <button class="filter-pill ${guestFilter==='semua'?'active':''}" data-filter="semua">Semua</button>
+    <button class="filter-pill ${guestFilter==='pria'?'active':''}" data-filter="pria">Pihak Pria</button>
+    <button class="filter-pill ${guestFilter==='wanita'?'active':''}" data-filter="wanita">Pihak Wanita</button>
+  </div>`;
+
+  html += `<div class="export-bar">
+    <div class="export-bar-left">
+      <label for="exportCatSelect">Kategori untuk export/cetak:</label>
+      <select id="exportCatSelect">
+        <option value="semua" ${exportCatFilter==='semua'?'selected':''}>Semua Kategori</option>
+        ${GUEST_CATS.map(gc=>`<option value="${gc.key}" ${exportCatFilter===gc.key?'selected':''}>${gc.label}</option>`).join('')}
+      </select>
+      <span class="tag" id="exportCountTag"></span>
+    </div>
+    <div class="export-bar-right">
+      <button class="btn-ghost" id="exportCsvBtn">⬇ Export CSV</button>
+      <button class="btn-primary" id="printLabelBtn">🖨 Cetak Label Nama</button>
+    </div>
+  </div>`;
+
+  html += `<div class="guest-cats">`;
+  GUEST_CATS.forEach(gc=>{
+    const list = (state.guests[gc.key]||[]).filter(g=> guestFilter==='semua' || g.pihak===guestFilter);
+    const total = list.reduce((s,g)=> s+(Number(g.qty)||0), 0);
+    html += `<div class="card" data-cat="${gc.key}">
+      <div class="card-head"><h3>${gc.label}</h3><span class="tag">${list.length} nama</span></div>
+      <div class="guest-list-inner">`;
+      if(list.length===0){
+        html += `<div class="empty" style="padding:14px 0">Belum ada tamu di kategori ini</div>`;
+      } else {
+        list.forEach(g=>{
+          html += `<div class="guest-item" data-guest="${g.id}">
+            <span class="gname pihak-${g.pihak}">${escHtml(g.nama)}</span>
+            <span class="gaddr">${escHtml(g.alamat||'')}</span>
+            <span class="gqty">${g.qty||0}</span>
+            <button class="del-btn" data-action="del-guest" data-cat="${gc.key}" data-guest="${g.id}">✕</button>
+          </div>`;
+        });
+      }
+      html += `</div>
+      <div class="cat-total">Jumlah: ${total} orang</div>
+      <form class="guest-form" data-cat="${gc.key}">
+        <input type="text" name="nama" placeholder="Nama" required>
+        <input type="text" name="alamat" placeholder="Alamat">
+        <input type="number" name="qty" min="1" value="1" placeholder="Qty">
+        <select name="pihak"><option value="pria" ${myRole && myRole.role==='pria' ? 'selected':''}>Pria</option><option value="wanita" ${myRole && myRole.role==='wanita' ? 'selected':''}>Wanita</option></select>
+        <button class="btn-primary" type="submit" style="padding:7px 14px;font-size:12.5px;">+ Tambah</button>
+      </form>
+    </div>`;
+  });
+  html += `</div>`;
+  c.innerHTML = html;
+
+  c.querySelectorAll('.filter-pill').forEach(btn=> btn.onclick=()=>{ guestFilter = btn.dataset.filter; renderTamu(c); });
+
+  c.querySelectorAll('[data-action="del-guest"]').forEach(btn=> btn.onclick = async ()=>{
+    const cat = btn.dataset.cat, id = btn.dataset.guest;
+    btn.disabled = true;
+    const latest = await fetchLatest(SK.guest(cat), state.guests[cat]);
+    const updated = latest.filter(g=>g.id!==id);
+    state.guests[cat] = updated;
+    await saveKey(SK.guest(cat), updated);
+    renderTamu(c);
+  });
+
+  c.querySelectorAll('.guest-form').forEach(form=> form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const cat = form.dataset.cat;
+    const fd = new FormData(form);
+    const nama = (fd.get('nama')||'').trim();
+    if(!nama) return;
+    const submitBtn = form.querySelector('button[type=submit]');
+    submitBtn.disabled = true; submitBtn.textContent = 'Menyimpan…';
+    const newGuest = {id:uid(), nama, alamat:(fd.get('alamat')||'').trim(), qty:Number(fd.get('qty'))||1, pihak:fd.get('pihak')};
+    // fetch-then-merge so a guest the partner just added isn't overwritten
+    const latest = await fetchLatest(SK.guest(cat), state.guests[cat]);
+    latest.push(newGuest);
+    state.guests[cat] = latest;
+    await saveKey(SK.guest(cat), latest, true);
+    showToast('Tamu ditambahkan & tersimpan');
+    renderTamu(c);
+  }));
+
+  const catSelect = document.getElementById('exportCatSelect');
+  catSelect.onchange = ()=>{ exportCatFilter = catSelect.value; updateExportCount(); };
+  document.getElementById('exportCsvBtn').onclick = ()=> exportGuestsCSV();
+  document.getElementById('printLabelBtn').onclick = ()=> printGuestLabels();
+  updateExportCount();
+
+  function updateExportCount(){
+    const n = getExportGuests().length;
+    document.getElementById('exportCountTag').textContent = n + ' tamu terpilih';
+  }
+}
+function escHtml(s){ return escAttr(s); }
+
+/* ---------- EXPORT / PRINT LABEL ---------- */
+function getExportGuests(){
+  const cats = exportCatFilter==='semua' ? GUEST_CATS : GUEST_CATS.filter(gc=>gc.key===exportCatFilter);
+  const rows = [];
+  cats.forEach(gc=>{
+    (state.guests[gc.key]||[])
+      .filter(g=> guestFilter==='semua' || g.pihak===guestFilter)
+      .forEach(g=> rows.push({kategori:gc.label, nama:g.nama, alamat:g.alamat||'', qty:g.qty||1, pihak:g.pihak==='wanita'?'Wanita':'Pria'}));
+  });
+  return rows;
+}
+
+function csvEscape(v){
+  const s = String(v??'');
+  if(/[",\n;]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+function exportGuestsCSV(){
+  const rows = getExportGuests();
+  if(rows.length===0){ showToast('Tidak ada data tamu untuk di-export'); return; }
+  const header = ['No','Kategori','Nama','Alamat','Qty','Pihak Keluarga'];
+  const lines = [header.join(',')];
+  rows.forEach((r,i)=> lines.push([i+1, r.kategori, r.nama, r.alamat, r.qty, r.pihak].map(csvEscape).join(',')));
+  const csv = '\uFEFF' + lines.join('\n'); // BOM so Excel opens UTF-8 correctly
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const namePart = exportCatFilter==='semua' ? 'semua-kategori' : exportCatFilter;
+  a.href = url;
+  a.download = `daftar-tamu-${namePart}-${guestFilter}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast('CSV diunduh — siap untuk mail merge label undangan');
+}
+
+function printGuestLabels(){
+  const rows = getExportGuests();
+  if(rows.length===0){ showToast('Tidak ada data tamu untuk dicetak'); return; }
+  const container = document.getElementById('printLabels');
+  container.innerHTML = rows.map(r=> `
+    <div class="pl-label">
+      <div class="pl-orn">&amp;</div>
+      <div class="pl-to">Kepada Yth.</div>
+      <div class="pl-name">${escHtml(r.nama)}</div>
+      ${r.alamat ? `<div class="pl-addr">${escHtml(r.alamat)}</div>` : ''}
+      ${r.qty>1 ? `<div class="pl-qty">+${r.qty-1} orang</div>` : ''}
+    </div>
+  `).join('');
+  document.body.classList.add('printing');
+  const cleanup = ()=>{ document.body.classList.remove('printing'); window.removeEventListener('afterprint', cleanup); };
+  window.addEventListener('afterprint', cleanup);
+  setTimeout(()=> window.print(), 80);
+}
+
+/* ---------- SONGS ---------- */
+function renderLagu(c){
+  let html = `<h2 style="text-align:center;margin-bottom:4px;">Daftar Lagu</h2><p style="text-align:center;color:var(--mauve-soft);font-size:13.5px">Playlist untuk momen spesial — tekan ⟳ Sinkron di atas untuk memuat tambahan terbaru</p>${divider()}`;
+  html += `<div class="card"><table class="song-table"><thead><tr><th>No</th><th>Judul Lagu</th><th>Penyanyi</th><th style="width:34px"></th></tr></thead><tbody>`;
+  if(state.songs.length===0){
+    html += `<tr><td colspan="4"><div class="empty">Belum ada lagu ditambahkan</div></td></tr>`;
+  } else {
+    state.songs.forEach((s,idx)=>{
+      html += `<tr data-song="${s.id}">
+        <td>${idx+1}</td>
+        <td><input type="text" data-field="judul" value="${escAttr(s.judul)}"></td>
+        <td><input type="text" data-field="penyanyi" value="${escAttr(s.penyanyi)}"></td>
+        <td><button class="del-btn" data-action="del-song">✕</button></td>
+      </tr>`;
+    });
+  }
+  html += `</tbody></table>
+    <button class="add-row-btn" id="addSongBtn">+ Tambah lagu</button>
+  </div>`;
+  c.innerHTML = html;
+
+  c.querySelectorAll('tr[data-song] input').forEach(el=> el.addEventListener('input', (e)=>{
+    const tr = e.target.closest('tr');
+    const s = state.songs.find(s=>s.id===tr.dataset.song);
+    s[e.target.dataset.field] = e.target.value;
+    debouncedSave(SK.songs, state.songs, 'songs');
+  }));
+  c.querySelectorAll('[data-action="del-song"]').forEach(btn=> btn.onclick = async (e)=>{
+    const id = e.target.closest('tr').dataset.song;
+    const latest = await fetchLatest(SK.songs, state.songs);
+    const updated = latest.filter(s=>s.id!==id);
+    state.songs = updated;
+    await saveKey(SK.songs, updated);
+    renderLagu(c);
+  });
+  document.getElementById('addSongBtn').onclick = async ()=>{
+    const latest = await fetchLatest(SK.songs, state.songs);
+    latest.push({id:uid(), judul:'', penyanyi:''});
+    state.songs = latest;
+    await saveKey(SK.songs, latest, true);
+    renderLagu(c);
+  };
+}
+
+/* flush any pending debounced saves if the tab is closed/hidden */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'hidden'){
+    Object.keys(saveTimer).forEach(id=> clearTimeout(saveTimer[id]));
+    saveKey(SK.meta, {couple:state.couple, reserve:state.reserve}, true);
+    EVENT_ORDER.forEach(k=> saveKey(SK.event(k), state.events[k], true));
+    saveKey(SK.songs, state.songs, true);
+  }
+});
+
+/* ================= BACKUP / RESTORE (manual Google Drive sync workaround) ================= */
+function downloadBackup(){
+  const backup = {
+    _type: 'wedding-planner-backup', _version: 2, exportedAt: new Date().toISOString(),
+    couple: state.couple, reserve: state.reserve, events: state.events, guests: state.guests, songs: state.songs,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `wedding-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showToast('Cadangan diunduh — simpan ke Google Drive kamu');
+}
+
+async function restoreBackup(file){
+  if(!file) return;
+  let data;
+  try{ data = JSON.parse(await file.text()); }
+  catch(e){ showToast('File tidak valid'); return; }
+  if(!data || data._type !== 'wedding-planner-backup'){ showToast('File bukan cadangan Wedding Planner'); return; }
+  if(!confirm('Memulihkan cadangan akan MENIMPA data yang ada saat ini untuk semua orang. Lanjutkan?')) return;
+
+  state.couple = data.couple || defaultMeta().couple;
+  state.reserve = data.reserve || defaultMeta().reserve;
+  await saveKey(SK.meta, {couple:state.couple, reserve:state.reserve}, true);
+
+  for(const k of EVENT_ORDER){
+    state.events[k] = (data.events && data.events[k]) || defaultEventGroups(k);
+    await saveKey(SK.event(k), state.events[k], true);
+  }
+  for(const gc of GUEST_CATS){
+    state.guests[gc.key] = (data.guests && data.guests[gc.key]) || [];
+    await saveKey(SK.guest(gc.key), state.guests[gc.key], true);
+  }
+  state.songs = data.songs || [];
+  await saveKey(SK.songs, state.songs, true);
+
+  showToast('Cadangan berhasil dipulihkan');
+  hydrateHeader();
+  renderContent();
+}
+
+document.getElementById('backupFab').onclick = ()=>{
+  document.getElementById('backupPanel').classList.toggle('open');
+};
+document.getElementById('downloadBackupBtn').onclick = downloadBackup;
+document.getElementById('restoreFileInput').onchange = (e)=> restoreBackup(e.target.files[0]);
+
+/* ================= INIT ================= */
+initLogin();
+
+</script>
+</body>
+</html>
